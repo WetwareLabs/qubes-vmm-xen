@@ -11,9 +11,9 @@
  ROMS := 
 --- xen-4.4.0/Config.mk.orig	2014-06-24 00:06:06.704838751 +0200
 +++ xen-4.4.0/Config.mk	2014-06-24 00:07:09.715775232 +0200
-@@ -241,7 +241,7 @@
- # Fri Aug 2 14:12:09 2013 -0400
- # Fix bug in CBFS file walking with compressed files.
+@@ -219,7 +219,7 @@
+ # Wed Jun 26 16:30:45 2013 +0100
+ # xen: Don't perform SMP setup.
  
 -ETHERBOOT_NICS ?= rtl8139 8086100e
 +ETHERBOOT_NICS ?= 10ec8139 8086100e
@@ -22,12 +22,12 @@
  # Mercurial in-tree version, or a local directory, or a git URL.
 --- xen-4.4.0/tools/firmware/Makefile.orig	2014-06-24 00:05:20.338168036 +0200
 +++ xen-4.4.0/tools/firmware/Makefile	2014-06-24 00:05:48.607904064 +0200
-@@ -14,7 +14,7 @@
- endif
+@@ -10,7 +10,7 @@
+ SUBDIRS-$(CONFIG_SEABIOS) += seabios-dir
  SUBDIRS-$(CONFIG_ROMBIOS) += rombios
  SUBDIRS-$(CONFIG_ROMBIOS) += vgabios
 -SUBDIRS-$(CONFIG_ROMBIOS) += etherboot
 +#SUBDIRS-$(CONFIG_ROMBIOS) += etherboot
  SUBDIRS-y += hvmloader
  
- ovmf-dir:
+ ovmf:

@@ -26,7 +26,7 @@ index 6fa68a2..9576558 100644
 --- a/extras/mini-os/netfront.c
 +++ b/extras/mini-os/netfront.c
 @@ -536,6 +536,12 @@ void shutdown_netfront(struct netfront_dev *dev)
-         free(err);
+         if (err) free(err);
      }
  
 +    /* device closed, lets remove it completely so backend also will be

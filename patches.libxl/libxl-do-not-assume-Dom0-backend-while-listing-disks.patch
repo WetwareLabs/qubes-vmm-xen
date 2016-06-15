@@ -59,20 +59,20 @@ index c386004..e2c678a 100644
              *ndisks += 1;
          }
      }
-@@ -2999,6 +3002,12 @@
+@@ -2977,6 +2977,12 @@
  
      libxl_device_nic_init(nic);
  
 +    rc = sscanf(be_path, "/local/domain/%d/", &nic->backend_domid);
 +    if (rc != 1) {
 +        LOG(ERROR, "Unable to fetch device backend domid from %s", be_path);
-+        goto out;
++        return;
 +    }
 +
- #define READ_BACKEND(tgc, subpath) ({                                   \
-         rc = libxl__xs_read_checked(tgc, XBT_NULL,                      \
-                                     GCSPRINTF("%s/" subpath, be_path),  \
-@@ -3070,15 +3079,15 @@
+     tmp = xs_read(ctx->xsh, XBT_NULL,
+                   libxl__sprintf(gc, "%s/handle", be_path), &len);
+     if ( tmp )
+@@ -3070,14 +3079,14 @@
                                             libxl_device_nic **nics,
                                             int *nnics)
  {
@@ -81,7 +81,6 @@ index c386004..e2c678a 100644
      char **dir = NULL;
      unsigned int n = 0;
      libxl_device_nic *pnic = NULL, *pnic_end = NULL;
-     int rc;
  
 -    be_path = libxl__sprintf(gc, "%s/backend/%s/%d",
 -                             libxl__xs_get_dompath(gc, 0), type, domid);
@@ -92,24 +91,21 @@ index c386004..e2c678a 100644
      if (dir && n) {
          libxl_device_nic *tmp;
          tmp = realloc(*nics, sizeof (libxl_device_nic) * (*nnics + n));
-@@ -3088,13 +3097,15 @@
-         pnic = *nics + *nnics;
-         pnic_end = *nics + *nnics + n;
+@@ -3057,10 +3063,14 @@
+         *nnics += n;
+         pnic_end = *nics + *nnics;
          for (; pnic < pnic_end; pnic++, dir++) {
 -            const char *p;
 -            p = libxl__sprintf(gc, "%s/%s", be_path, *dir);
--            rc = libxl__device_nic_from_xs_be(gc, p, pnic);
+-            libxl__device_nic_from_xs_be(gc, p, pnic);
 +            const char *be_path;
 +            be_path = libxl__xs_read(gc, XBT_NULL,
 +                    libxl__sprintf(gc, "%s/%s/backend", fe_path, *dir));
 +            if (!be_path)
 +                return ERROR_FAIL;
-+            rc = libxl__device_nic_from_xs_be(gc, be_path, pnic);
-             if (rc) goto out;
--            pnic->backend_domid = 0;
++            libxl__device_nic_from_xs_be(gc, be_path, pnic);
+             pnic->backend_domid = 0;
 +            *nnics += 1;
          }
--        *nnics += n;
      }
      return 0;
- 

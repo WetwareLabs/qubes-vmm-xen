@@ -50,15 +50,15 @@ diff --git a/tools/libxl/xl.h b/tools/libxl/xl.h
 index f188708..9e316d1 100644
 --- a/tools/libxl/xl.h
 +++ b/tools/libxl/xl.h
-@@ -48,6 +48,8 @@ int main_restore(int argc, char **argv);
+@@ -47,6 +47,8 @@
  int main_migrate_receive(int argc, char **argv);
  int main_save(int argc, char **argv);
  int main_migrate(int argc, char **argv);
 +int main_suspend(int argc, char **argv);
 +int main_resume(int argc, char **argv);
- #endif
  int main_dump_core(int argc, char **argv);
  int main_pause(int argc, char **argv);
+ int main_unpause(int argc, char **argv);
 diff --git a/tools/libxl/xl_cmdimpl.c b/tools/libxl/xl_cmdimpl.c
 index 4fc46eb..5b4c80c 100644
 --- a/tools/libxl/xl_cmdimpl.c

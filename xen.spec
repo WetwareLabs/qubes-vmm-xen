@@ -486,6 +486,9 @@ install -m 644 %{SOURCE50} %{buildroot}%{_unitdir}/oxenstored.service
 # config file only used for hotplug, Fedora uses udev instead
 rm -f %{buildroot}/%{_sysconfdir}/sysconfig/xend
 
+#wetware: stuff in 4.3 but not in 4.4 
+rm -f %{buildroot}%{_sysconfdir}/rc.d/init.d/xend 
+
 ############ create dirs in /var ############
 
 mkdir -p %{buildroot}%{_localstatedir}/lib/xen/xend-db/domain
@@ -621,6 +624,14 @@ rm -rf %{buildroot}
 %{python_sitearch}/%{name}
 %{python_sitearch}/xen-*.egg-info
 
+#wetware: stuff in 4.3 but not in 4.4 
+# Guest config files
+%config(noreplace) %{_sysconfdir}/%{name}/xmexample*
+# Daemon config
+%config(noreplace) %{_sysconfdir}/%{name}/xend-*
+# xm config
+%config(noreplace) %{_sysconfdir}/%{name}/xm-*
+
 %files libs
 %defattr(-,root,root)
 %{_libdir}/*.so.*
@@ -684,9 +695,9 @@ rm -rf %{buildroot}
 # man pages
 %{_mandir}/man1/xentop.1*
 %{_mandir}/man1/xentrace_format.1*
-%{_mandir}/man1/xenstore-chmod.1*
-%{_mandir}/man1/xenstore-ls.1*
-%{_mandir}/man1/xenstore.1*
+#%{_mandir}/man1/xenstore-chmod.1*
+#%{_mandir}/man1/xenstore-ls.1*
+#%{_mandir}/man1/xenstore.1*
 %{_mandir}/man8/xentrace.8*
 %{_mandir}/man1/xl.1*
 %{_mandir}/man5/xl.cfg.5*
@@ -707,6 +718,9 @@ rm -rf %{buildroot}
 %ghost %{_localstatedir}/run/xenstored
 # XenD runtime state
 %ghost %attr(0700,root,root) %{_localstatedir}/run/xend
+
+#wetware: stuff in 4.3 but not in 4.4 
+%ghost %attr(0700,root,root) %{_localstatedir}/run/xend/boot
 
 # All xenstore CLI tools
 %{_bindir}/qemu-*-xen
@@ -750,10 +764,19 @@ rm -rf %{buildroot}
 %{_sbindir}/xl
 %{_sbindir}/xen-lowmemd
 %{_sbindir}/xen-ringwatch
-%{_sbindir}/xen-mfndump
+#%{_sbindir}/xen-mfndump
 %{_sbindir}/xencov
 /usr/libexec/qemu-bridge-helper
 %{_bindir}/xl
+
+#wetware: missing files (in 4.3.2 but not in 4.4?)
+%{_sbindir}/xsview
+%{_sbindir}/blktapctrl
+# XSM
+%{_sbindir}/flask-*
+#%%config(noreplace) {_sysconfdir}/rc.d/init.d/xend
+%{_datadir}/%{name}/create.dtd
+
 
 
 # Xen logfiles
@@ -822,6 +845,8 @@ rm -rf %{buildroot}
 /usr/lib/%{name}/bin/qemu-dm
 /usr/lib/%{name}/bin/qemu-img
 /usr/lib/%{name}/bin/qemu-io
+#wetware: stuff in 4.3 that was not in 4.4. Is this needed here?
+/usr/lib/%{name}/bin/qemu-ga
 /usr/lib/%{name}/bin/qemu-nbd
 /usr/lib/%{name}/bin/qemu-system-i386
 /usr/lib/%{name}/bin/stubdompath.sh

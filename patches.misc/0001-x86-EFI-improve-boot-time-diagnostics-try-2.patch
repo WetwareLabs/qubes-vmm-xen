@@ -40,7 +40,7 @@ index a772509..2b515f2 100644
      if ( !EFI_ERROR(efi_bs->LocateProtocol(&shim_lock_guid, NULL,
                      (void **)&shim_lock)) &&
 -         shim_lock->Verify(kernel.ptr, kernel.size) != EFI_SUCCESS )
--        blexit(L"Dom0 kernel image could not be verified.");
+-        blexit(L"Dom0 kernel image could not be verified\r\n");
 +         (status = shim_lock->Verify(kernel.ptr, kernel.size)) != EFI_SUCCESS )
 +        PrintErrMesg(L"Dom0 kernel image could not be verified", status);
  
