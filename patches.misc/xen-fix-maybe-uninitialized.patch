@@ -17,22 +17,3 @@ diff -ur xen-4.3.2-old/tools/blktap/drivers/block-qcow.c xen-4.3.2/tools/blktap/
  		}
  		memcpy(tmp_ptr2, l2_ptr, 4096);
  		lseek(s->fd, l2_offset + (l2_sector << 12), SEEK_SET);
-diff -ur xen-4.3.2-old/tools/blktap2/drivers/block-qcow.c xen-4.3.2/tools/blktap2/drivers/block-qcow.c
---- xen-4.3.2-old/tools/blktap2/drivers/block-qcow.c	2014-02-14 17:22:59.000000000 +0200
-+++ xen-4.3.2/tools/blktap2/drivers/block-qcow.c	2016-06-11 23:14:37.695000000 +0300
-@@ -427,6 +427,7 @@
- 
- 		if (posix_memalign((void **)&tmp_ptr, 4096, 4096) != 0) {
- 			DPRINTF("ERROR allocating memory for L1 table\n");
-+			return 0;
- 		}
- 		memcpy(tmp_ptr, l1_ptr, 4096);
- 
-@@ -600,6 +601,7 @@
- 		
- 		if (posix_memalign((void **)&tmp_ptr2, 4096, 4096) != 0) {
- 			DPRINTF("ERROR allocating memory for L1 table\n");
-+			return 0;
- 		}
- 		memcpy(tmp_ptr2, l2_ptr, 4096);
- 		lseek(s->fd, l2_offset + (l2_sector << 12), SEEK_SET);
