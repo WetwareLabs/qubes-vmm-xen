@@ -1,0 +1,439 @@
+diff -ur -x .cproject -x .project -x '*.swp' xen-4.6.1/tools/libxl/libxl.c xen-4.6.1-new/tools/libxl/libxl.c
+--- xen-4.6.1/tools/libxl/libxl.c	2016-02-09 16:44:19.000000000 +0200
++++ xen-4.6.1-new/tools/libxl/libxl.c	2016-06-28 22:23:37.599140458 +0300
+@@ -670,6 +670,7 @@
+     xc_domaininfo_t xcinfo;
+     int ret;
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware, domid %d",domid);
+     ret = xc_domain_getinfolist(ctx->xch, domid, 1, &xcinfo);
+     if (ret<0) {
+         LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "getting domain info list");
+@@ -677,6 +678,7 @@
+     }
+     if (ret==0 || xcinfo.domain != domid) return ERROR_DOMAIN_NOTFOUND;
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #2");
+     if (info_r)
+         xcinfo2xlinfo(ctx, &xcinfo, info_r);
+     return 0;
+diff -ur -x .cproject -x .project -x '*.swp' xen-4.6.1/tools/libxl/libxl_dom.c xen-4.6.1-new/tools/libxl/libxl_dom.c
+--- xen-4.6.1/tools/libxl/libxl_dom.c	2016-02-09 16:44:19.000000000 +0200
++++ xen-4.6.1-new/tools/libxl/libxl_dom.c	2016-06-29 15:41:31.191000000 +0300
+@@ -1883,6 +1883,7 @@
+     libxl_dominfo info;
+     int rc;
+ 
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware: domid %d",domid);
+     libxl_dominfo_init(&info);
+ 
+     rc = libxl_domain_info(ctx, &info, domid);
+@@ -1894,6 +1895,7 @@
+     uuid_string = GCSPRINTF(LIBXL_UUID_FMT, LIBXL_UUID_BYTES(info.uuid));
+     path = GCSPRINTF("/var/lib/xen/userdata-%s.%u.%s.%s",
+                      wh, domid, uuid_string, userdata_userid);
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware userdata path %s",path);
+ 
+  out:
+     libxl_dominfo_dispose(&info);
+@@ -1952,6 +1954,9 @@
+     int fd = -1;
+ 
+     filename = libxl__userdata_path(gc, domid, userdata_userid, "d");
++
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware domid %d, filename %s",domid, filename);
++
+     if (!filename) {
+         rc = ERROR_NOMEM;
+         goto out;
+@@ -1963,6 +1968,7 @@
+     }
+ 
+     newfilename = libxl__userdata_path(gc, domid, userdata_userid, "n");
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware new filename: %s",newfilename);
+     if (!newfilename) {
+         rc = ERROR_NOMEM;
+         goto out;
+@@ -2037,14 +2043,20 @@
+     int datalen = 0;
+     void *data = 0;
+ 
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware: userdata_userid %s",userdata_userid);
+     filename = libxl__userdata_path(gc, domid, userdata_userid, "d");
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "userdata path %s", filename);
+     if (!filename) {
++        LIBXL__LOG(CTX, LIBXL__LOG_ERROR, "wetware userdata_path failed");
+         rc = ERROR_NOMEM;
+         goto out;
+     }
+ 
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware #2");
+     e = libxl_read_file_contents(CTX, filename, data_r ? &data : 0, &datalen);
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware #3: datalen %d, e %d, errno %d",datalen, e,errno);
+     if (e && errno != ENOENT) {
++        LIBXL__LOG(CTX, LIBXL__LOG_ERROR, "wetware read_file_contents failed");
+         rc = ERROR_FAIL;
+         goto out;
+     }
+diff -ur -x .cproject -x .project -x '*.swp' xen-4.6.1/tools/libxl/libxl_internal.c xen-4.6.1-new/tools/libxl/libxl_internal.c
+--- xen-4.6.1/tools/libxl/libxl_internal.c	2016-02-09 16:44:19.000000000 +0200
++++ xen-4.6.1-new/tools/libxl/libxl_internal.c	2016-06-29 00:38:45.328140458 +0300
+@@ -393,8 +393,9 @@
+     int fd;
+     struct stat stab, fstab;
+ 
+-    lockfile = libxl__userdata_path(gc, domid, "domain-userdata-lock", "l");
+-    if (!lockfile) goto out;
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware domid %d", domid);
++   lockfile = libxl__userdata_path(gc, domid, "domain-userdata-lock", "l");
++   if (!lockfile) goto out;
+ 
+     lock = libxl__zalloc(NOGC, sizeof(libxl__domain_userdata_lock));
+     lock->path = libxl__strdup(NOGC, lockfile);
+@@ -483,8 +484,10 @@
+     uint8_t *data = NULL;
+     int rc, len;
+ 
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware get_domain_conf #1");
+     rc = libxl__userdata_retrieve(gc, domid, "libxl-json", &data, &len);
+     if (rc) {
++        LIBXL__LOG(CTX, LIBXL__LOG_ERROR, "wetware failed to retrieve domain configuration for domain %d", domid);
+         LOGEV(ERROR, rc,
+               "failed to retrieve domain configuration for domain %d", domid);
+         rc = ERROR_FAIL;
+@@ -493,9 +496,11 @@
+ 
+     if (len == 0) {
+         /* No logging, not necessary an error from caller's PoV. */
++        LIBXL__LOG(CTX, LIBXL__LOG_ERROR, "wetware error: json config empty");
+         rc = ERROR_JSON_CONFIG_EMPTY;
+         goto out;
+     }
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware get_domain_conf #2");
+     rc = libxl_domain_config_from_json(CTX, d_config, (const char *)data);
+ 
+ out:
+@@ -509,8 +514,10 @@
+     char *d_config_json;
+     int rc;
+ 
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware domid %d",domid);
+     d_config_json = libxl_domain_config_to_json(CTX, d_config);
+     if (!d_config_json) {
++        LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "error converting");
+         LOGE(ERROR,
+              "failed to convert domain configuration to JSON for domain %d",
+              domid);
+@@ -522,11 +529,13 @@
+                                (const uint8_t *)d_config_json,
+                                strlen(d_config_json) + 1 /* include '\0' */);
+     if (rc) {
++        LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "failed storing");
+         LOGEV(ERROR, rc, "failed to store domain configuration for domain %d",
+               domid);
+         rc = ERROR_FAIL;
+         goto out;
+     }
++    LIBXL__LOG(CTX, LIBXL__LOG_DEBUG, "wetware #2");
+ 
+ out:
+     free(d_config_json);
+--- xen-4.6.1/tools/libxl/libxl_pci.c	2016-02-09 16:44:19.000000000 +0200
++++ xen-4.6.1-new/tools/libxl/libxl_pci.c	2016-07-04 17:49:54.979000000 +0300
+@@ -126,26 +126,39 @@
+     xs_transaction_t t = XBT_NULL;
+     libxl__device *device;
+     int rc;
++
++
+     libxl_domain_config d_config;
+     libxl_device_pci pcidev_saved;
+     libxl__domain_userdata_lock *lock = NULL;
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #1");
++
+     libxl_domain_config_init(&d_config);
+     libxl_device_pci_init(&pcidev_saved);
+     libxl_device_pci_copy(CTX, &pcidev_saved, pcidev);
+ 
+     be_path = libxl__sprintf(gc, "%s/backend/pci/%d/0", libxl__xs_get_dompath(gc, 0), domid);
+     num_devs = libxl__xs_read(gc, XBT_NULL, libxl__sprintf(gc, "%s/num_devs", be_path));
+-    if (!num_devs)
++
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #2: num_devs: %s", num_devs);
++
++    if (!num_devs) {
++        LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware create_pci_backed");
+         return libxl__create_pci_backend(gc, domid, pcidev, 1);
++    }
+ 
+     libxl_domain_type domtype = libxl__domain_type(gc, domid);
+-    if (domtype == LIBXL_DOMAIN_TYPE_INVALID)
++    if (domtype == LIBXL_DOMAIN_TYPE_INVALID) {
++        LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "wetware pci_add_xenstore invalid domain type");
+         return ERROR_FAIL;
++    }
+ 
+     if (!starting && domtype == LIBXL_DOMAIN_TYPE_PV) {
+-        if (libxl__wait_for_backend(gc, be_path, GCSPRINTF("%d", XenbusStateConnected)) < 0)
++        if (libxl__wait_for_backend(gc, be_path, GCSPRINTF("%d", XenbusStateConnected)) < 0) {
++            LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "wetware pci_add_xenstore wait_for_backend fail");
+             return ERROR_FAIL;
++        }
+     }
+ 
+     back = flexarray_make(gc, 16, 1);
+@@ -162,15 +175,21 @@
+ 
+     lock = libxl__lock_domain_userdata(gc, domid);
+     if (!lock) {
+-        rc = ERROR_LOCK_FAIL;
+-        goto out;
++    	rc = ERROR_LOCK_FAIL;
++    	goto out;
+     }
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware pci_add_xenstore #5: domid %d",domid);
+     rc = libxl__get_domain_configuration(gc, domid, &d_config);
+-    if (rc) goto out;
++    if (rc) {
++    	LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "wetware pci_add_xenstore get_domain_conf failed");
++    	goto out;
++    }
+ 
+     DEVICE_ADD(pci, pcidevs, domid, &pcidev_saved, COMPARE_PCI, &d_config);
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware pci_add_xenstore #6");
++
+     for (;;) {
+         rc = libxl__xs_transaction_start(gc, &t);
+         if (rc) goto out;
+@@ -896,29 +915,45 @@
+     int irq, i, rc, hvm = 0;
+     uint32_t flag = XEN_DOMCTL_DEV_RDM_RELAXED;
+ 
+-    if (type == LIBXL_DOMAIN_TYPE_INVALID)
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware do_pci_add to dom %d - PCI device "PCI_BDF, domid, pcidev->domain,
++            pcidev->bus, pcidev->dev, pcidev->func);
++
++    if (type == LIBXL_DOMAIN_TYPE_INVALID) {
++        LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "Invalid domain type");
+         return ERROR_FAIL;
++    }
+ 
+     if (type == LIBXL_DOMAIN_TYPE_HVM) {
+         hvm = 1;
+         if (libxl__wait_for_device_model_deprecated(gc, domid, "running",
+                                          NULL, NULL, NULL) < 0) {
++            LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "wait for device model failed");
+             return ERROR_FAIL;
+         }
+         switch (libxl__device_model_version_running(gc, domid)) {
+             case LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN_TRADITIONAL:
+                 rc = qemu_pci_add_xenstore(gc, domid, pcidev);
++                if ( rc ) {
++                LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "Error in qemu_pci_add_xenstore");
++                }
+                 break;
+             case LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN:
+                 rc = libxl__qmp_pci_add(gc, domid, pcidev);
++                if ( rc ) {
++                LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "Error in qmp_pci_add");
++                }
+                 break;
+-            default:
++            default: {
++                LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "Invalid device model version %d",libxl__device_model_version_running(gc, domid));
+                 return ERROR_INVAL;
++            	}
+         }
+-        if ( rc )
++        if ( rc ) {
+             return ERROR_FAIL;
++        }
+     }
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #2");
+     sysfs_path = libxl__sprintf(gc, SYSFS_PCI_DEV"/"PCI_BDF"/resource", pcidev->domain,
+                                 pcidev->bus, pcidev->dev, pcidev->func);
+     f = fopen(sysfs_path, "r");
+@@ -926,7 +961,7 @@
+     irq = 0;
+ 
+     if (f == NULL) {
+-        LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "Couldn't open %s", sysfs_path);
++    	LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "Couldn't open %s", sysfs_path);
+         return ERROR_FAIL;
+     }
+     for (i = 0; i < PROC_PCI_NUM_RESOURCES; i++) {
+@@ -953,6 +988,8 @@
+         }
+     }
+     fclose(f);
++
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #3");
+     sysfs_path = libxl__sprintf(gc, SYSFS_PCI_DEV"/"PCI_BDF"/irq", pcidev->domain,
+                                 pcidev->bus, pcidev->dev, pcidev->func);
+     f = fopen(sysfs_path, "r");
+@@ -976,17 +1013,19 @@
+     }
+     fclose(f);
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #4");
+     /* Don't restrict writes to the PCI config space from this VM */
+     if (pcidev->permissive) {
+         if ( sysfs_write_bdf(gc, SYSFS_PCIBACK_DRIVER"/permissive",
+                              pcidev) < 0 ) {
+             LIBXL__LOG(ctx, LIBXL__LOG_ERROR,
+-                       "Setting permissive for device");
++                       "Setting permissive for device failed");
+             return ERROR_FAIL;
+         }
+     }
+ 
+ out:
++LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware flag %d",flag);
+     if (!libxl_is_stubdom(ctx, domid, NULL)) {
+         if (pcidev->rdm_policy == LIBXL_RDM_RESERVE_POLICY_STRICT) {
+             flag &= ~XEN_DOMCTL_DEV_RDM_RELAXED;
+@@ -994,6 +1033,7 @@
+             LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "unknown rdm check flag.");
+             return ERROR_FAIL;
+         }
++        LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware assign device with rdm_policy flag %d", flag);
+         rc = xc_assign_device(ctx->xch, domid, pcidev_encode_bdf(pcidev), flag);
+         if (rc < 0 && (hvm || errno != ENOSYS)) {
+             LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "xc_assign_device failed");
+@@ -1001,10 +1041,12 @@
+         }
+     }
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #5");
+     if (!starting)
+         rc = libxl__device_pci_add_xenstore(gc, domid, pcidev, starting);
+     else
+         rc = 0;
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #6: %d", rc);
+     return rc;
+ }
+ 
+@@ -1038,7 +1080,8 @@
+     }
+     if (errno == ENOENT) {
+         LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "The kernel doesn't support reset from sysfs for PCI device "PCI_BDF, domain, bus, dev, func);
+-    } else {
++        LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "Failed to open reset %s", reset);
++     } else {
+         LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "Failed to access reset path %s", reset);
+     }
+     return -1;
+@@ -1088,6 +1131,9 @@
+     int num_assigned, i, rc;
+     int stubdomid = 0;
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware --- (starting %d, domid %d) add device %04x:%02x:%02x.%u",
++               starting,domid,pcidev->domain, pcidev->bus, pcidev->dev, pcidev->func);
++
+     if (libxl__domain_type(gc, domid) == LIBXL_DOMAIN_TYPE_HVM) {
+         rc = xc_test_assign_device(ctx->xch, domid, pcidev_encode_bdf(pcidev));
+         if (rc) {
+@@ -1101,12 +1147,23 @@
+     }
+ 
+     rc = libxl__device_pci_setdefault(gc, pcidev);
+-    if (rc) goto out;
++    if (rc) {
++        LIBXL__LOG(ctx, LIBXL__LOG_ERROR,
++                   "PCI device %04x:%02x:%02x.%u %s?",
++                   pcidev->domain, pcidev->bus, pcidev->dev, pcidev->func,
++                   "pci_setdefault failed");
++    	goto out;
++    }
+ 
+     if (pcidev->seize && !pciback_dev_is_assigned(gc, pcidev)) {
+         rc = libxl__device_pci_assignable_add(gc, pcidev, 1);
+-        if ( rc )
++        if ( rc ) {
++            LIBXL__LOG(ctx, LIBXL__LOG_ERROR,
++                       "PCI device %04x:%02x:%02x.%u %s?",
++                       pcidev->domain, pcidev->bus, pcidev->dev, pcidev->func,
++                       "pci_assignable_add failed");
+             goto out;
++        }
+     }
+ 
+     if (!libxl_pcidev_assignable(ctx, pcidev)) {
+@@ -1132,13 +1189,17 @@
+ 
+     stubdomid = libxl_get_stubdom_id(ctx, domid);
+     if (stubdomid != 0) {
++        LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware -- add to stubdom #%d",stubdomid);
+         libxl_device_pci pcidev_s = *pcidev;
+         /* stubdomain is always running by now, even at create time */
+         rc = do_pci_add(gc, stubdomid, &pcidev_s, 0);
+-        if ( rc )
++        if ( rc ) {
++            LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "do_pci_add failed %d", rc);
+             goto out;
++        }
+     }
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware #2");
+     orig_vdev = pcidev->vdevfn & ~7U;
+ 
+     if ( pcidev->vfunc_mask == LIBXL_PCI_FUNC_ALL ) {
+@@ -1148,6 +1209,7 @@
+             goto out;
+         }
+         if ( pci_multifunction_check(gc, pcidev, &pfunc_mask) ) {
++            LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "multifunction_check failed");
+             rc = ERROR_FAIL;
+             goto out;
+         }
+@@ -1157,6 +1219,7 @@
+         pfunc_mask = (1 << pcidev->func);
+     }
+ 
++    LIBXL__LOG(ctx, LIBXL__LOG_DEBUG, "wetware -- pfunc_mask %x, vfunc_mask %x, orig_vdev %x", pfunc_mask, pcidev->vfunc_mask, orig_vdev );
+     for(rc = 0, i = 7; i >= 0; --i) {
+         if ( (1 << i) & pfunc_mask ) {
+             if ( pcidev->vfunc_mask == pfunc_mask ) {
+@@ -1169,8 +1232,10 @@
+                  */
+                 pcidev->vdevfn = orig_vdev;
+             }
+-            if ( do_pci_add(gc, domid, pcidev, starting) )
++            if ( do_pci_add(gc, domid, pcidev, starting) ) {
++                LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "do_pci_add #2 failed");
+                 rc = ERROR_FAIL;
++            }
+         }
+     }
+ 
+diff -ur -x .cproject -x .project -x '*.swp' xen-4.6.1/xen/drivers/passthrough/vtd/iommu.c xen-4.6.1-new/xen/drivers/passthrough/vtd/iommu.c
+--- xen-4.6.1/xen/drivers/passthrough/vtd/iommu.c	2016-02-09 16:44:19.000000000 +0200
++++ xen-4.6.1-new/xen/drivers/passthrough/vtd/iommu.c	2016-06-30 21:55:02.722278241 +0300
+@@ -2326,8 +2326,21 @@
+                    relaxed ? "risky" : "disallowed",
+                    seg, bus, PCI_SLOT(devfn), PCI_FUNC(devfn),
+                    rmrr->base_address, d->domain_id);
+-            if ( !relaxed )
+-                return -EPERM;
++            
++            printk(XENLOG_GUEST "%s" VTDPREFIX
++            		" Devices sharing RMRR:\n",
++					relaxed ? XENLOG_WARNING : XENLOG_ERR );
++            for (int j = 0; j < rmrr->scope.devices_cnt; j++ ) {
++            	u16 bdf2 = rmrr->scope.devices[j];
++            	printk(XENLOG_GUEST "%s" VTDPREFIX
++            			" ----- #%d: %04x:%02x:%02x.%u \n",
++						relaxed ? XENLOG_WARNING : XENLOG_ERR,
++						j+1, seg, PCI_BUS(bdf2),
++						PCI_SLOT(bdf2), PCI_FUNC(bdf2) );
++            }
++
++	    if ( !relaxed )
++               return -EPERM;
+         }
+     }
+ 
